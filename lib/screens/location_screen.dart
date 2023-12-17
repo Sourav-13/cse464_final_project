@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:weather_today_completed/services/location.dart';
+import 'package:weather_today_completed/services/network.dart';
 import 'package:weather_today_completed/utils/constants.dart';
 import '../utils/custom_paint.dart';
 import 'city_screen.dart';
@@ -31,17 +33,37 @@ class LocationScreenState extends State<LocationScreen> {
 
   void updateUI(dynamic weatherData) {
     setState(() {
-      double temp = weatherData['main']['temp'];
-      temperature = temp.toInt();
-      double minTemp = weatherData['main']['temp_min'];
-      minTemperature = minTemp.toInt();
-      double maxTemp = weatherData['main']['temp_max'];
-      maxTemperature = maxTemp.toInt();
-      windSpeed = weatherData['wind']['speed'].toDouble();
-      double humTemp = weatherData['main']['humidity'].toDouble();
-      humidity = humTemp.toInt();
-      cityName = weatherData['name'];
+      if (weatherData != null) {
+        double temp = weatherData['main']['temp'];
+        temperature = temp.toInt();
+        double minTemp = weatherData['main']['temp_min'];
+        minTemperature = minTemp.toInt();
+        double maxTemp = weatherData['main']['temp_max'];
+        maxTemperature = maxTemp.toInt();
+        windSpeed = weatherData['wind']['speed'].toDouble();
+        double humTemp = weatherData['main']['humidity'].toDouble();
+        humidity = humTemp.toInt();
+        cityName = weatherData['name'];
+      }
     });
+  }
+
+  Future<dynamic> getLocationWeather(double latitude, double longitude) async {
+    final String weatherUrl =
+        "https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=5a18fc6e52dc7342ee016a20e95a106c&units=metric";
+    NetworkHelper networkHelper = NetworkHelper('$weatherUrl');
+
+    var weatherData = await networkHelper.getData();
+    return weatherData;
+  }
+
+  void getCurrentLocationWeather() async {
+    Location location = Location();
+    await location.getCurrentLocation();
+    double lat = location.latitude;
+    double lon = location.longitude;
+    var weatherData = await getLocationWeather(lat, lon);
+    updateUI(weatherData);
   }
 
   @override
@@ -81,7 +103,9 @@ class LocationScreenState extends State<LocationScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () async {},
+                      onTap: () {
+                        getCurrentLocationWeather();
+                      },
                       child: Image.asset(
                         'images/ic_current_location.png',
                         width: 32.0,
